@@ -1,3 +1,4 @@
+console.log("Advance Array 2 Task");
 const data = [
   {
     id: "5bd761dcae323e45a93ccfe8",
@@ -2557,85 +2558,160 @@ const data = [
   },
 ];
 
-var idTransaction = [];
-var storeLocation = [];
-var userEmail = [];
-var purchaseMethod = [];
-var item = [];
+const newData = data.map((transaction) => {
+  const {
+    id: idTransaction,
+    storeLocation,
+    customer,
+    purchaseMethod,
+    items,
+  } = transaction;
+  const { email: userEmail } = customer;
+  const purchasedItems = items.map(({ name, quantity, price }) => ({
+    name,
+    quantity,
+    price: price.$numberDecimal,
+  }));
 
-data.forEach(function (d) {
-  idTransaction.push(d.id);
-  storeLocation.push(d.storeLocation);
-  userEmail.push(d.customer.email);
-  purchaseMethod.push(d.purchaseMethod);
-  item.push(d.items);
+  return {
+    idTransaction,
+    storeLocation,
+    userEmail,
+    purchaseMethod,
+    purchasedItems,
+  };
 });
+console.log("Data Baru : ");
+console.log(newData);
+console.log("----------------------------------------------------------");
 
-const transaksiPerLokasi = {};
+const transactions = [];
 
-data.forEach((transaksi) => {
-  const lokasi = transaksi.storeLocation;
-  if (!transaksiPerLokasi[lokasi]) {
-    transaksiPerLokasi[lokasi] = [];
-  }
-  transaksiPerLokasi[lokasi].push(transaksi);
-});
-
-console.log(transaksiPerLokasi);
-
-const profits = data.map((transaction) => {
-  const itemsTotalCost = transaction.items.reduce((total, item) => {
-    return (
-      total +
-      parseFloat(item.price.$numberDecimal) * parseInt(item.quantity.$numberInt)
-    );
-  }, 0);
-  return itemsTotalCost;
-});
-
-console.log(profits);
-
-const quantityPerTransaction = data.map((transaction) => {
-  const totalQuantity = transaction.items.reduce(
-    (acc, item) => acc + item.quantity.$numberInt,
-    0
+newData.forEach((transaction) => {
+  const index = transactions.findIndex(
+    (t) => t.location === transaction.storeLocation
   );
-  return totalQuantity;
+  const { idTransaction, userEmail, purchaseMethod, purchasedItems } =
+    transaction;
+  if (index === -1) {
+    transactions.push({
+      location: transaction.storeLocation,
+      transactions: [
+        {
+          id: idTransaction,
+          email: userEmail,
+          purchaseMethod,
+          purchasedItems,
+        },
+      ],
+    });
+  } else {
+    transactions[index].transactions.push({
+      id: idTransaction,
+      email: userEmail,
+      purchaseMethod,
+      purchasedItems,
+    });
+  }
 });
+console.log("Transaksi berdasarkan Lokasi: ");
+console.log(transactions);
+console.log("----------------------------------------------------------");
 
-console.log(quantityPerTransaction);
+const profits = [];
+
+data.forEach((transaction) => {
+  let totalProfit = 0;
+
+  transaction.items.forEach((item) => {
+    const itemTotal =
+      parseFloat(item.price.$numberDecimal) *
+      parseInt(item.quantity.$numberInt);
+    totalProfit += itemTotal;
+  });
+
+  profits.push(totalProfit);
+});
+console.log("Profit : ");
+console.log(profits);
+console.log("----------------------------------------------------------");
+
+const totalQuantities = data.map((transaction) => {
+  let total = 0;
+  transaction.items.forEach((item) => {
+    total += item.quantity.$numberInt;
+  });
+  return total;
+});
+console.log("Quantities : ");
+console.log(totalQuantities);
+console.log("----------------------------------------------------------");
 
 const ratings = data.map((sale) => {
   return {
-    storeLocation: sale.storeLocation,
+    location: sale.storeLocation,
     rating: sale.customer.satisfaction.$numberInt,
   };
 });
 
+console.log("Data Ratting : ");
 console.log(ratings);
+console.log("----------------------------------------------------------");
 
-let profitsByLocation = [];
+const revenueByLocation = [];
 
 data.forEach((sale) => {
-  let location = sale.storeLocation;
-  let totalSale = 0;
+  const location = sale.storeLocation;
+  let revenue = 0;
 
   sale.items.forEach((item) => {
-    let price = parseFloat(item.price.$numberDecimal);
-    let quantity = parseInt(item.quantity.$numberInt);
-    totalSale += price * quantity;
+    revenue +=
+      parseFloat(item.price.$numberDecimal) *
+      parseInt(item.quantity.$numberInt);
   });
 
-  let profit = totalSale - 0;
-  let locationIndex = profitsByLocation.findIndex(
-    (p) => p.location === location
+  const existingLocation = revenueByLocation.find(
+    (loc) => loc.location === location
   );
 
-  if (locationIndex === -1) {
-    profitsByLocation.push({ location: location, profit: profit });
+  if (existingLocation) {
+    existingLocation.revenue += revenue;
   } else {
-    profitsByLocation[locationIndex].profit += profit;
+    revenueByLocation.push({ location, revenue });
   }
 });
+console.log("Data Revenue : ");
+console.log(revenueByLocation);
+console.log("----------------------------------------------------------");
 
-console.log(profitsByLocation);
+let totalRevenue = 0;
+let maxRevenueTransaction = null;
+let minRevenueTransaction = null;
+let maxRevenue = 0;
+let minRevenue = Number.MAX_SAFE_INTEGER;
+
+for (const transaction of data) {
+  let transactionRevenue = 0;
+
+  for (const item of transaction.items) {
+    transactionRevenue += item.price.$numberDecimal * item.quantity.$numberInt;
+  }
+
+  totalRevenue += transactionRevenue;
+
+  if (transactionRevenue > maxRevenue) {
+    maxRevenue = transactionRevenue;
+    maxRevenueTransaction = transaction;
+  }
+
+  if (transactionRevenue < minRevenue) {
+    minRevenue = transactionRevenue;
+    minRevenueTransaction = transaction;
+  }
+}
+
+console.log("Max Omset:", maxRevenueTransaction);
+console.log("----------------------------------------------------------");
+console.log("Min Omset:", minRevenueTransaction);
+console.log("----------------------------------------------------------");
+console.log("TOTAL:", totalRevenue);
